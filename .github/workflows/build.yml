@@ -27,26 +27,26 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev 
-    
+        sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev
+
     - name: Set up Android SDK
       run: |
-        yes | ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-        # Baixa e descompacta as ferramentas de linha de comando do Android
-        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-        mkdir -p ${SDK_ROOT}/cmdline-tools
-        unzip cmdline-tools.zip -d ${SDK_ROOT}/cmdline-tools
-        mv ${SDK_ROOT}/cmdline-tools/cmdline-tools ${SDK_ROOT}/cmdline-tools/latest
-
-        # Adiciona as ferramentas ao PATH do sistema para os PRÓXIMOS passos
-        echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
-
-        # Aceita as licenças e instala as build-tools e platform-tools USANDO O CAMINHO COMPLETO
-        yes | ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
-        ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.2"
+        # Exporta a variável ANDROID_HOME para os próximos passos
+        echo "ANDROID_HOME=${{ github.workspace }}/android-sdk" >> $GITHUB_ENV
         
+        # Baixa e descompacta as ferramentas de linha de comando
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+        mkdir -p ${{ github.workspace }}/android-sdk/cmdline-tools
+        unzip cmdline-tools.zip -d ${{ github.workspace }}/android-sdk/cmdline-tools
+        mv ${{ github.workspace }}/android-sdk/cmdline-tools/cmdline-tools ${{ github.workspace }}/android-sdk/cmdline-tools/latest
+        
+        # Adiciona as ferramentas ao PATH do sistema para os PRÓXIMOS passos
+        echo "${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "${{ github.workspace }}/android-sdk/platform-tools" >> $GITHUB_PATH
+        
+        # Instala os pacotes do SDK usando o caminho completo e garantido
+        yes | ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
     - name: Install Buildozer and Dependencies
       run: pip install --upgrade buildozer cython setuptools
 
