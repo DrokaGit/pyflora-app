@@ -31,19 +31,23 @@ jobs:
     
     - name: Set up Android SDK
       run: |
+        # Define o local do SDK e o exporta como variável de ambiente
         SDK_ROOT=${{ github.workspace }}/android-sdk
         echo "ANDROID_HOME=${SDK_ROOT}" >> $GITHUB_ENV
 
+        # Baixa e descompacta as ferramentas de linha de comando do Android
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
         mkdir -p ${SDK_ROOT}/cmdline-tools
         unzip cmdline-tools.zip -d ${SDK_ROOT}/cmdline-tools
         mv ${SDK_ROOT}/cmdline-tools/cmdline-tools ${SDK_ROOT}/cmdline-tools/latest
 
+        # Adiciona as ferramentas ao PATH do sistema para os PRÓXIMOS passos
         echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
 
-        yes | sdkmanager --licenses > /dev/null
-        sdkmanager "platform-tools" "build-tools;33.0.2"
+        # Aceita as licenças e instala as build-tools e platform-tools USANDO O CAMINHO COMPLETO
+        yes | ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
+        ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.2"
         
     - name: Install Buildozer and Dependencies
       run: pip install --upgrade buildozer cython setuptools
