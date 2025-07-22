@@ -31,7 +31,7 @@ jobs:
 
     - name: Set up Android SDK
       run: |
-        # Exporta a variável ANDROID_HOME para os próximos passos
+        # Exporta a variável ANDROID_HOME
         echo "ANDROID_HOME=${{ github.workspace }}/android-sdk" >> $GITHUB_ENV
         
         # Baixa e descompacta as ferramentas de linha de comando
@@ -39,22 +39,15 @@ jobs:
         mkdir -p ${{ github.workspace }}/android-sdk/cmdline-tools
         unzip cmdline-tools.zip -d ${{ github.workspace }}/android-sdk/cmdline-tools
         mv ${{ github.workspace }}/android-sdk/cmdline-tools/cmdline-tools ${{ github.workspace }}/android-sdk/cmdline-tools/latest
-
-        # --- INÍCIO DA CORREÇÃO ---
-        # Cria a estrutura de pastas antiga que o Buildozer espera encontrar
-        mkdir -p ${{ github.workspace }}/android-sdk/tools/bin
-        
-        # Cria um atalho (link simbólico) do local antigo para o novo local do sdkmanager
-        ln -s ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager ${{ github.workspace }}/android-sdk/tools/bin/sdkmanager
-        # --- FIM DA CORREÇÃO ---
         
         # Adiciona as ferramentas ao PATH do sistema
         echo "${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "${{ github.workspace }}/android-sdk/platform-tools" >> $GITHUB_PATH
-        echo "${{ github.workspace }}/android-sdk/tools/bin" >> $GITHUB_PATH # Adiciona o caminho antigo também
         
-        # Instala os pacotes do SDK
-        yes | ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+        # --- INÍCIO DA CORREÇÃO ---
+        # Instala os pacotes do SDK, incluindo a versão 36.0.0 que o Buildozer está pedindo
+        yes | ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;36.0.0"
+        # --- FIM DA CORREÇÃO ---
 
     - name: Install Buildozer and Dependencies
       run: pip install --upgrade buildozer cython setuptools
@@ -78,7 +71,7 @@ jobs:
         warn_on_root = 1
 
         p4a.branch = master
-
+        
         android.api = 34
         android.minapi = 21
         android.ndk = 25b
