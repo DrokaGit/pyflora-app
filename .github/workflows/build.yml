@@ -29,25 +29,30 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev
 
-    - name: Set up Android SDK
+    - name: Set up Android SDK and Accept Licenses
       run: |
         # Exporta a variável ANDROID_HOME
         echo "ANDROID_HOME=${{ github.workspace }}/android-sdk" >> $GITHUB_ENV
+        SDK_ROOT=${{ github.workspace }}/android-sdk
         
         # Baixa e descompacta as ferramentas de linha de comando
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-        mkdir -p ${{ github.workspace }}/android-sdk/cmdline-tools
-        unzip cmdline-tools.zip -d ${{ github.workspace }}/android-sdk/cmdline-tools
-        mv ${{ github.workspace }}/android-sdk/cmdline-tools/cmdline-tools ${{ github.workspace }}/android-sdk/cmdline-tools/latest
+        mkdir -p ${SDK_ROOT}/cmdline-tools
+        unzip cmdline-tools.zip -d ${SDK_ROOT}/cmdline-tools
+        mv ${SDK_ROOT}/cmdline-tools/cmdline-tools ${SDK_ROOT}/cmdline-tools/latest
+        
+        # --- A CORREÇÃO DEFINITIVA DA LICENÇA ---
+        # Cria a pasta de licenças e os arquivos com as "assinaturas" necessárias
+        mkdir -p ${SDK_ROOT}/licenses
+        echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ${SDK_ROOT}/licenses/android-sdk-license
+        echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${SDK_ROOT}/licenses/android-sdk-preview-license
         
         # Adiciona as ferramentas ao PATH do sistema
-        echo "${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "${{ github.workspace }}/android-sdk/platform-tools" >> $GITHUB_PATH
+        echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
         
-        # --- INÍCIO DA CORREÇÃO ---
-        # Instala os pacotes do SDK, incluindo a versão 36.0.0 que o Buildozer está pedindo
-        yes | ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;36.0.0"
-        # --- FIM DA CORREÇÃO ---
+        # Instala os pacotes do SDK (agora as licenças já estão "aceitas")
+        ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;36.0.0"
 
     - name: Install Buildozer and Dependencies
       run: pip install --upgrade buildozer cython setuptools
