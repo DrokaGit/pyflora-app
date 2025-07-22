@@ -31,9 +31,7 @@ jobs:
     
     - name: Set up Android SDK
       run: |
-        # Define o local do SDK e o exporta como variável de ambiente
-        SDK_ROOT=${{ github.workspace }}/android-sdk
-        echo "ANDROID_HOME=${SDK_ROOT}" >> $GITHUB_ENV
+        yes | ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
         # Baixa e descompacta as ferramentas de linha de comando do Android
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
@@ -72,7 +70,7 @@ jobs:
 
         p4a.branch = master
 
-        android.api = 33
+        android.api = 34
         android.minapi = 21
         android.ndk = 25b
         EOF
