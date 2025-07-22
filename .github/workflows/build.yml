@@ -29,27 +29,32 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev
 
-    - name: Set up Android SDK in Buildozer's Default Location
+    - name: Set up Android SDK
       run: |
-        # Cria a estrutura de pastas exata que o Buildozer espera
-        mkdir -p $HOME/.buildozer/android/platform
-
-        # Define o caminho do SDK para este local
-        SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-        echo "ANDROID_HOME=${SDK_ROOT}" >> $GITHUB_ENV
+        # Exporta a variável ANDROID_HOME para os próximos passos
+        echo "ANDROID_HOME=${{ github.workspace }}/android-sdk" >> $GITHUB_ENV
         
         # Baixa e descompacta as ferramentas de linha de comando
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-        mkdir -p ${SDK_ROOT}/cmdline-tools
-        unzip cmdline-tools.zip -d ${SDK_ROOT}/cmdline-tools
-        mv ${SDK_ROOT}/cmdline-tools/cmdline-tools ${SDK_ROOT}/cmdline-tools/latest
+        mkdir -p ${{ github.workspace }}/android-sdk/cmdline-tools
+        unzip cmdline-tools.zip -d ${{ github.workspace }}/android-sdk/cmdline-tools
+        mv ${{ github.workspace }}/android-sdk/cmdline-tools/cmdline-tools ${{ github.workspace }}/android-sdk/cmdline-tools/latest
+
+        # --- INÍCIO DA CORREÇÃO ---
+        # Cria a estrutura de pastas antiga que o Buildozer espera encontrar
+        mkdir -p ${{ github.workspace }}/android-sdk/tools/bin
+        
+        # Cria um atalho (link simbólico) do local antigo para o novo local do sdkmanager
+        ln -s ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager ${{ github.workspace }}/android-sdk/tools/bin/sdkmanager
+        # --- FIM DA CORREÇÃO ---
         
         # Adiciona as ferramentas ao PATH do sistema
-        echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
+        echo "${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "${{ github.workspace }}/android-sdk/platform-tools" >> $GITHUB_PATH
+        echo "${{ github.workspace }}/android-sdk/tools/bin" >> $GITHUB_PATH # Adiciona o caminho antigo também
         
         # Instala os pacotes do SDK
-        yes | ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+        yes | ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
     - name: Install Buildozer and Dependencies
       run: pip install --upgrade buildozer cython setuptools
@@ -73,8 +78,6 @@ jobs:
         warn_on_root = 1
 
         p4a.branch = master
-
-        # A linha android.sdk_path foi REMOVIDA, pois agora não é mais necessária
 
         android.api = 34
         android.minapi = 21
