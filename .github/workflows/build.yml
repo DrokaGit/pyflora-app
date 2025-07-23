@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-    # --- A MUDANÇA CRUCIAL ESTÁ AQUI ---
     runs-on: ubuntu-22.04
 
     steps:
@@ -30,9 +29,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev
 
-    - name: Set up Android SDK and Accept All Licenses
+    - name: Set up Android SDK and Force Accept All Licenses
       run: |
-        # Exporta a variável ANDROID_HOME para todos os passos seguintes
+        # Exporta a variável ANDROID_HOME
         echo "ANDROID_HOME=${{ github.workspace }}/android-sdk" >> $GITHUB_ENV
         SDK_ROOT=${{ github.workspace }}/android-sdk
         
@@ -45,14 +44,18 @@ jobs:
         # Adiciona os caminhos ao sistema
         echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
-        
-        # Assinatura manual de todas as licenças conhecidas
+
+        # --- TENTATIVA FINAL DE ACEITAÇÃO DE LICENÇA ---
+        # Tática 1: Criar os arquivos de licença manualmente
         mkdir -p ${SDK_ROOT}/licenses
         echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ${SDK_ROOT}/licenses/android-sdk-license
         echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${SDK_ROOT}/licenses/android-sdk-preview-license
-        
-        # Instala as ferramentas
-        ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+        # Tática 2: Rodar o comando de aceitação global
+        yes | ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
+
+        # Tática 3: Pré-instalar a versão que está falhando (36.0.0) junto com as outras
+        ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;36.0.0"
 
     - name: Install Buildozer and Dependencies
       run: pip install --upgrade buildozer==1.5.0 cython==3.0.10 setuptools
