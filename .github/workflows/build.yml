@@ -53,6 +53,7 @@ jobs:
 
         # Tática 2: Rodar o comando de aceitação global
         yes | ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
+        yes | /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
         # Tática 3: Pré-instalar a versão que está falhando (36.0.0) junto com as outras
         ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;36.0.0"
