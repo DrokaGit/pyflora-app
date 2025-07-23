@@ -1,0 +1,90 @@
+name: Build Android APK (Final Attempt)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev
+
+    - name: Manually Set Up Android SDK, Fix Paths, and Pre-Accept All Licenses
+      run: |
+        # Exporta a variável ANDROID_HOME para todos os passos seguintes
+        echo "ANDROID_HOME=${{ github.workspace }}/android-sdk" >> $GITHUB_ENV
+        SDK_ROOT=${{ github.workspace }}/android-sdk
+        
+        # Baixa e descompacta as ferramentas de linha de comando
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+        mkdir -p ${SDK_ROOT}/cmdline-tools
+        unzip cmdline-tools.zip -d ${SDK_ROOT}/cmdline-tools
+        mv ${SDK_ROOT}/cmdline-tools/cmdline-tools ${SDK_ROOT}/cmdline-tools/latest
+
+        # Adiciona os caminhos ao sistema
+        echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
+        
+        # --- A CHAVE MESTRA: ASSINATURA MANUAL DE TODAS AS LICENÇAS ---
+        mkdir -p ${SDK_ROOT}/licenses
+        echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ${SDK_ROOT}/licenses/android-sdk-license
+        echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${SDK_ROOT}/licenses/android-sdk-preview-license
+        echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" > ${SDK_ROOT}/licenses/intel-android-extra-license
+        
+        # Instala as ferramentas. As licenças já estão "assinadas".
+        ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+    - name: Install Buildozer and Dependencies
+      run: pip install --upgrade buildozer==1.5.0 cython==3.0.10 setuptools
+
+    - name: Create buildozer.spec
+      run: |
+        cat << EOF > buildozer.spec
+        [app]
+        title = PyFlora Estoque
+        package.name = pyflora
+        package.domain = com.meuapp
+        source.dir = .
+        source.include_exts = py,png,jpg,kv,ttf
+        version = 1.0
+        requirements = python3,kivy==2.3.0,https://github.com/kivy/kivy_garden.graph/archive/master.zip,pillow,qrcode,pyzbar,opencv-python,openpyxl,fpdf,pyjnius==1.6.1
+        orientation = portrait
+        android.permissions = CAMERA,INTERNET
+
+        [buildozer]
+        log_level = 2
+        warn_on_root = 1
+        
+        android.api = 34
+        android.minapi = 21
+        android.ndk = 25b
+        EOF
+
+    - name: Build with Buildozer
+      run: buildozer -v android debug
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk
+        path: bin/*.apk
