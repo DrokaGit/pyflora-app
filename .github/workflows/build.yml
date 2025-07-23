@@ -1,4 +1,4 @@
-name: Build Android APK (Final Attempt)
+name: Build Android APK (Final Attempt on Ubuntu 22.04)
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # --- A MUDANÇA CRUCIAL ESTÁ AQUI ---
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout Code
@@ -29,7 +30,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev
 
-    - name: Manually Set Up Android SDK, Fix Paths, and Pre-Accept All Licenses
+    - name: Set up Android SDK and Accept All Licenses
       run: |
         # Exporta a variável ANDROID_HOME para todos os passos seguintes
         echo "ANDROID_HOME=${{ github.workspace }}/android-sdk" >> $GITHUB_ENV
@@ -40,18 +41,17 @@ jobs:
         mkdir -p ${SDK_ROOT}/cmdline-tools
         unzip cmdline-tools.zip -d ${SDK_ROOT}/cmdline-tools
         mv ${SDK_ROOT}/cmdline-tools/cmdline-tools ${SDK_ROOT}/cmdline-tools/latest
-
+        
         # Adiciona os caminhos ao sistema
         echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
         
-        # --- A CHAVE MESTRA: ASSINATURA MANUAL DE TODAS AS LICENÇAS ---
+        # Assinatura manual de todas as licenças conhecidas
         mkdir -p ${SDK_ROOT}/licenses
         echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ${SDK_ROOT}/licenses/android-sdk-license
         echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${SDK_ROOT}/licenses/android-sdk-preview-license
-        echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" > ${SDK_ROOT}/licenses/intel-android-extra-license
         
-        # Instala as ferramentas. As licenças já estão "assinadas".
+        # Instala as ferramentas
         ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
     - name: Install Buildozer and Dependencies
