@@ -36,7 +36,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade buildozer==1.5.0 cython==3.0.10 setuptools
 
-    - name: Install Android SDK (manual)
+    - name: Install Android SDK and set environment
       run: |
         mkdir -p $HOME/android-sdk/cmdline-tools
         cd $HOME/android-sdk/cmdline-tools
@@ -46,10 +46,11 @@ jobs:
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
         echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
-    - name: Accept Licenses and Install Packages
+    - name: Accept Licenses and Install Android Packages
       run: |
         yes | sdkmanager --licenses
-        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+        sdkmanager --install "cmdline-tools;latest"
+        sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
 
     - name: Create buildozer.spec
       run: |
@@ -70,7 +71,8 @@ jobs:
         warn_on_root = 1
         android.api = 34
         android.minapi = 21
-        android.ndk = 25b
+        android.ndk = 25.2.9519653
+        android.ndk_path = $ANDROID_HOME/ndk/25.2.9519653
         EOF
 
     - name: Build APK
