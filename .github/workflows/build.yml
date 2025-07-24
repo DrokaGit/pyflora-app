@@ -24,12 +24,12 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install system dependencies
+    - name: Install system dependencies (incl. AIDL)
       run: |
         sudo apt-get update
         sudo apt-get install -y git zip unzip autoconf automake libtool build-essential \
           zlib1g-dev libncurses5-dev libncursesw5-dev libsqlite3-dev libssl-dev libffi-dev \
-          libjpeg-dev libfreetype6-dev python3-pip
+          libjpeg-dev libfreetype6-dev python3-pip libstdc++6 aidl
 
     - name: Install Buildozer and Python deps
       run: |
