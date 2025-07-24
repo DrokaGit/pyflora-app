@@ -86,7 +86,15 @@ jobs:
         android.minapi = 21
         android.ndk = 25.2.9519653
         android.ndk_path = $ANDROID_HOME/ndk/25.2.9519653
+        android.sdk_path = $ANDROID_HOME
+        android.accept_sdk_license = True
         EOF
+        
+    - name: Verificar sdkmanager e aidl
+      run: |
+        echo "Verificando SDK instalado..."
+        ls -la $ANDROID_HOME/build-tools/33.0.2/
+        ls -la $ANDROID_HOME/cmdline-tools/latest/bin/
 
     - name: Build APK
       run: buildozer -v android debug
