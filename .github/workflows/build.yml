@@ -50,7 +50,8 @@ jobs:
       run: |
         yes | sdkmanager --licenses
         sdkmanager --install "cmdline-tools;latest"
-        sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
+        sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653" "extras;android;m2repository"
+        ls -la $ANDROID_HOME/build-tools/33.0.2/aidl || echo "AIDL NÃO ENCONTRADO"
 
     - name: Create buildozer.spec
       run: |
