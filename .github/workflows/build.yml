@@ -1,4 +1,4 @@
-name: Build Android APK (Manual Setup)
+name: The Final Build
 
 on:
   push:
@@ -7,63 +7,62 @@ on:
 
 jobs:
   build:
+    # SOLUÇÃO 1: Usar o S.O. estável
     runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Set up Java
+    # SOLUÇÃO 5: Usar Java 17
+    - name: Set up Java 17
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Set up Python
+    # SOLUÇÃO 2: Usar Python 3.11
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
-    - name: Install system dependencies (incl. AIDL)
+    - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git zip unzip autoconf automake libtool build-essential \
-          zlib1g-dev libncurses5-dev libncursesw5-dev libsqlite3-dev libssl-dev libffi-dev \
-          libjpeg-dev libfreetype6-dev python3-pip libstdc++6 aidl
-          
-    - name: Set AIDL path manually
-      run: |
-        export AIDL_PATH=$ANDROID_HOME/build-tools/33.0.2/aidl
-        echo "AIDL path: $AIDL_PATH"
-        if [ ! -f "$AIDL_PATH" ]; then
-          echo "AIDL ainda não encontrado em $AIDL_PATH"
-          exit 1
-        fi
-        echo "buildozer: Setting AIDL path manually"
-        mkdir -p ~/.buildozer/android/platform/android-sdk/build-tools/33.0.2/
-        ln -s "$AIDL_PATH" ~/.buildozer/android/platform/android-sdk/build-tools/33.0.2/aidl
+        sudo apt-get install -y git zip unzip autoconf automake libtool build-essential zlib1g-dev libncurses5-dev libncursesw5-dev
 
-    - name: Install Buildozer and Python deps
+    - name: Set up Android SDK with All Fixes
       run: |
-        python -m pip install --upgrade pip
-        pip install --upgrade buildozer==1.5.0 cython==3.0.10 setuptools
+        # Define o caminho do SDK
+        SDK_ROOT=${{ github.workspace }}/android-sdk
+        echo "ANDROID_HOME=${SDK_ROOT}" >> $GITHUB_ENV
+        
+        # Baixa e descompacta as ferramentas
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+        mkdir -p ${SDK_ROOT}/cmdline-tools
+        unzip cmdline-tools.zip -d ${SDK_ROOT}/cmdline-tools
+        mv ${SDK_ROOT}/cmdline-tools/cmdline-tools ${SDK_ROOT}/cmdline-tools/latest
+        
+        # SOLUÇÃO 3: Corrige o caminho do sdkmanager com um link simbólico
+        mkdir -p ${SDK_ROOT}/tools/bin
+        ln -s ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager ${SDK_ROOT}/tools/bin/sdkmanager
+        
+        # Adiciona os caminhos ao sistema
+        echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
+        echo "${SDK_ROOT}/tools/bin" >> $GITHUB_PATH
+        
+        # SOLUÇÃO 4: Assina as licenças manualmente
+        mkdir -p ${SDK_ROOT}/licenses
+        echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ${SDK_ROOT}/licenses/android-sdk-license
+        echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${SDK_ROOT}/licenses/android-sdk-preview-license
+        
+        # Instala as ferramentas (as licenças já estão aceitas)
+        sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-    - name: Install Android SDK and set environment
-      run: |
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        cd $HOME/android-sdk/cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O tools.zip
-        unzip tools.zip
-        mv cmdline-tools latest
-        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-
-    - name: Accept Licenses and Install Android Packages
-      run: |
-        yes | sdkmanager --licenses
-        sdkmanager --install "cmdline-tools;latest"
-        sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653" "extras;android;m2repository"
-        ls -la $ANDROID_HOME/build-tools/33.0.2/aidl || echo "AIDL NÃO ENCONTRADO"
+    - name: Install Buildozer and Dependencies
+      run: pip install --upgrade buildozer==1.5.0 cython==3.0.10 setuptools
 
     - name: Create buildozer.spec
       run: |
@@ -82,31 +81,16 @@ jobs:
         [buildozer]
         log_level = 2
         warn_on_root = 1
-
+        
         android.api = 34
         android.minapi = 21
-        android.ndk = 25.2.9519653
-        android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
-        android.sdk_path = /home/runner/android-sdk
-        android.accept_sdk_license = True
+        android.ndk = 25b
         EOF
 
-    - name: Verificar sdkmanager e aidl
-      run: |
-        echo "Verificando SDK instalado..."
-        ls -la $ANDROID_HOME/build-tools/33.0.2/
-        ls -la $ANDROID_HOME/cmdline-tools/latest/bin/
-        
-    - name: Instalar NDK manualmente
-      run: |
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-        yes | sdkmanager "ndk;25.2.9519653"
-
-    - name: Build APK
+    - name: Build with Buildozer
       run: buildozer -v android debug
 
-    - name: Upload APK Artifact
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: apk
