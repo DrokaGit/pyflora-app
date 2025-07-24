@@ -48,18 +48,18 @@ jobs:
         mkdir -p ${SDK_ROOT}/tools/bin
         ln -s ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager ${SDK_ROOT}/tools/bin/sdkmanager
         
-        # Adiciona os caminhos ao sistema
-        echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
-        echo "${SDK_ROOT}/tools/bin" >> $GITHUB_PATH
-        
         # SOLUÇÃO 4: Assina as licenças manualmente
         mkdir -p ${SDK_ROOT}/licenses
         echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ${SDK_ROOT}/licenses/android-sdk-license
         echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${SDK_ROOT}/licenses/android-sdk-preview-license
         
-        # Instala as ferramentas (as licenças já estão aceitas)
-        sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+        # Adiciona os caminhos ao sistema para os próximos passos
+        echo "${SDK_ROOT}/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "${SDK_ROOT}/platform-tools" >> $GITHUB_PATH
+        echo "${SDK_ROOT}/tools/bin" >> $GITHUB_PATH
+        
+        # Instala as ferramentas USANDO O CAMINHO COMPLETO E CORRETO
+        ${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
     - name: Install Buildozer and Dependencies
       run: pip install --upgrade buildozer==1.5.0 cython==3.0.10 setuptools
