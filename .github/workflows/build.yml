@@ -30,6 +30,18 @@ jobs:
         sudo apt-get install -y git zip unzip autoconf automake libtool build-essential \
           zlib1g-dev libncurses5-dev libncursesw5-dev libsqlite3-dev libssl-dev libffi-dev \
           libjpeg-dev libfreetype6-dev python3-pip libstdc++6 aidl
+          
+    - name: Set AIDL path manually
+      run: |
+        export AIDL_PATH=$ANDROID_HOME/build-tools/33.0.2/aidl
+        echo "AIDL path: $AIDL_PATH"
+        if [ ! -f "$AIDL_PATH" ]; then
+          echo "AIDL ainda não encontrado em $AIDL_PATH"
+          exit 1
+        fi
+        echo "buildozer: Setting AIDL path manually"
+        mkdir -p ~/.buildozer/android/platform/android-sdk/build-tools/33.0.2/
+        ln -s "$AIDL_PATH" ~/.buildozer/android/platform/android-sdk/build-tools/33.0.2/aidl
 
     - name: Install Buildozer and Python deps
       run: |
