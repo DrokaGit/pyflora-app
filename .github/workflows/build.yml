@@ -82,19 +82,26 @@ jobs:
         [buildozer]
         log_level = 2
         warn_on_root = 1
+
         android.api = 34
         android.minapi = 21
         android.ndk = 25.2.9519653
-        android.ndk_path = $ANDROID_HOME/ndk/25.2.9519653
-        android.sdk_path = $ANDROID_HOME
+        android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
+        android.sdk_path = /home/runner/android-sdk
         android.accept_sdk_license = True
         EOF
-        
+
     - name: Verificar sdkmanager e aidl
       run: |
         echo "Verificando SDK instalado..."
         ls -la $ANDROID_HOME/build-tools/33.0.2/
         ls -la $ANDROID_HOME/cmdline-tools/latest/bin/
+        
+    - name: Instalar NDK manualmente
+      run: |
+        export ANDROID_HOME=$HOME/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+        yes | sdkmanager "ndk;25.2.9519653"
 
     - name: Build APK
       run: buildozer -v android debug
